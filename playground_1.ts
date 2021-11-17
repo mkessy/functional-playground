@@ -88,6 +88,7 @@ const fetchPokemon = (pokeId: number) => {
 };
 
 //fetch an n number of pokemons with each pokemon selected randomly (1118 total pokemon)
+//this method fails if the number n is too high as too high of concurrency crashses
 
 const fetchPokemonsTraverse = async (n: number) => {
   return pipe(
