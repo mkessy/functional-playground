@@ -1,17 +1,20 @@
 // getting comfortable with some basic funcitonal programming concepts
 // using the Pokemon API and the fp-ts ecosystem
-
 //
 
 //lets create a functional wrapper around our API request
 import * as D from "io-ts/Decoder";
 import * as TE from "fp-ts/TaskEither";
 import * as T from "fp-ts/Task";
+import * as O from "fp-ts/Option";
 import * as E from "fp-ts/Either";
+import * as A from "fp-ts/Array";
+import * as Random from "fp-ts/Random";
 import { pipe } from "fp-ts/function";
 import axios, { AxiosResponse } from "axios";
 import assert from "assert";
-import { string } from "fp-ts";
+import { monoid, string } from "fp-ts";
+import { Either } from "fp-ts/Either";
 
 const pokeEndpoint = "https://pokeapi.co/api/v2/pokemon/";
 
@@ -51,12 +54,15 @@ type Pokemon = D.TypeOf<typeof PokemonDecode>;
 const axiosGet = (
   url: string
 ): (() => Promise<AxiosResponse<Pokemon, any>>) => {
-  return () =>
-    axios.get<Pokemon>(url, {
+  return () => {
+    console.log(`fetching ${url}`);
+    return axios.get<Pokemon>(url, {
       validateStatus: function (status) {
         return status === 200; //tell axios to throw if the response code is anything but OK
       },
+      timeout: 2000,
     });
+  };
 };
 
 //declare const fetchPokemon: (pokeId: number) => TE.TaskEither<String, Pokemon>;
@@ -81,21 +87,34 @@ const fetchPokemon = (pokeId: number) => {
   );
 };
 
-const fetchPokemons = (pokeIds: number[]) => {};
+//fetch an n number of pokemons with each pokemon selected randomly (1118 total pokemon)
 
-const getPokeData = async (pokeId: number) => {
-  const pokeData = await fetchPokemon(pokeId)();
-  console.log(pokeData);
+const fetchPokemonsTraverse = async (n: number) => {
+  return pipe(
+    await pipe(
+      A.makeBy(n, Random.randomInt(1, 1118)),
+      A.map(fetchPokemon),
+      A.sequence(T.task)
+    )(),
+    A.map(O.fromEither),
+    A.compact
+  );
+  // returns TaskEither<left, right[]> but fails fast)
 };
+
+/* const getPokeData = async (pokeId: number) => {
+  const pokeData = await fetchPokemon(pokeId)();
+}; */
 
 // now we have a function fetchPokemon that returns a TaskEither<ErrorString, Pokemon>
 // how can we compose this further?
 
 // fetch an array of pokemon data in
 
-/* (async () => {
-  await getPokeData(10);
-})(); */
+(async () => {
+  const pokemons = await fetchPokemonsTraverse(8);
+  console.log(pokemons);
+})();
 
 //---------------TESTS---------------
 
