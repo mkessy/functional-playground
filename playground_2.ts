@@ -23,10 +23,9 @@ const validator =
 
     return pipe(
       A.makeBy(args.length, (i) => args[i](s)),
-      A.map(E.swap),
-      A.sequence(E.either),
+      A.traverse(E.either)(E.swap),
       E.swap
     );
   };
 
-pipe(validator("pooop1231HII")(minLength, oneCapital, oneNumber), console.log);
+pipe(validator("")(minLength, oneCapital, oneNumber), console.log);
