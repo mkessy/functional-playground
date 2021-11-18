@@ -1,12 +1,6 @@
-import { ifError } from "assert";
 import * as E from "fp-ts/Either";
 import * as A from "fp-ts/Array";
-import * as S from "fp-ts/string";
-import { sequenceT } from "fp-ts/lib/Apply";
 import { pipe } from "fp-ts/lib/function";
-import { NonEmptyArray } from "fp-ts/lib/NonEmptyArray";
-import { Semigroup, concatAll } from "fp-ts/lib/Semigroup";
-import { concat } from "fp-ts/lib/ReadonlyNonEmptyArray";
 
 const minLength = (s: string): E.Either<string, string> =>
   s.length >= 6 ? E.right(s) : E.left("at least 6 characters");
@@ -41,7 +35,7 @@ const validator =
       )
     );
   };
-
+pipe(validator("asdfas")(), console.log);
 pipe(
   validator("")(minLength, oneCapital, oneNumber, oneSpecialChar),
   console.log
