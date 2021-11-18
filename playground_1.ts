@@ -94,8 +94,7 @@ const fetchPokemonsTraverse = async (n: number) => {
   return pipe(
     await pipe(
       A.makeBy(n, Random.randomInt(1, 1118)),
-      A.map(fetchPokemon),
-      A.sequence(T.task)
+      A.traverse(T.task)(fetchPokemon)
     )(),
     A.map(O.fromEither),
     A.compact
