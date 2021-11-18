@@ -125,16 +125,17 @@ const limit = 20;
 
 const pokePaginator = paginator(totalPages, limit)(pokePerPage);
 const pokePaginatorPrism = prism(pokePaginator, reverseGetPageUrl);
-const pagesAround: Applicative<Array<number>> =
+const pagesAround =
   (pagesAround: number, maxPages: number) => (page: number) => {
-    const pages = pipe(
+    return pipe(
       A.makeBy(pagesAround * 2, (i) => page - pagesAround + i),
       A.filter((_page) => _page >= 0 && _page !== page && _page <= maxPages),
-      A.Apply
+      A.map(pokePaginatorPrism.getOption),
+      A.sequence(O.option)
     );
-
-    return modifyF((n: number) => pages);
   };
+
+console.log(pagesAround(5, 1118 / 20)(3));
 
 //--------TESTS--------
 const count = 1118;
