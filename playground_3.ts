@@ -74,6 +74,8 @@ type PokemonPaginatedPage = {
 const makePaginator =
   (totalCount: number, limit: number = 20) =>
   (countPerPage: number) => {
+    countPerPage =
+      countPerPage <= 0 || countPerPage >= limit ? limit : countPerPage;
     const totalPageCount =
       totalCount % limit === 0
         ? Math.floor(totalCount / limit)
@@ -145,7 +147,7 @@ const paginateAndLoad = (totalCount: number, limit: number) => {
 
 const paginateAndLoader = paginateAndLoad(1118, 20);
 
-paginateAndLoader(5)(10)().then((a) => console.log(a));
+paginateAndLoader(5)(0)().then((a) => console.log(a));
 
 //--------TESTS--------
 const count = 1118;
