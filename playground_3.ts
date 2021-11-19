@@ -71,7 +71,7 @@ type PokemonPaginatedPage = {
   }[];
 };
 
-const paginator =
+const makePaginator =
   (totalCount: number, limit: number = 20) =>
   (countPerPage: number) => {
     const totalPageCount =
@@ -87,43 +87,44 @@ const paginator =
     };
   };
 
-const axiosGet = <T>(url: string): (() => Promise<AxiosResponse<T, any>>) => {
-  return () => {
-    console.log(`fetching ${url}`);
-    return axios.get<T>(url, {
+const axiosGet = async <T>(url: string) => {
+  console.log(`fetching ${url}`);
+  return axios
+    .get<T>(url, {
       validateStatus: function (status) {
         return status === 200; //tell axios to throw if the response code is anything but OK
       },
       timeout: 2000,
-    });
-  };
+    })
+    .then((res) => res.data);
 };
 
-const fetchPokemonPage = (
-  pageNumber: number
-): TE.TaskEither<string, PokemonPaginatedPage> => {
+const axiosGetTask = TE.tryCatchK(axiosGet, (reason) => `${reason}`);
+
+const fetchPokemonPage = (pageUrl: string) => {
   return pipe(
-    pokePaginatorPrism.getOption(pageNumber),
-    O.fold(
-      () => TE.left("error getting url"),
-      (url) => TE.right(url)
-    ),
-    TE.chain((url) =>
-      TE.tryCatch(
-        () => axiosGet<PokemonPaginatedPage>(url)().then((res) => res.data),
-        (reason) => `${reason}`
-      )
-    )
-    /*  TE.chain((aUrl) => TE.tryCatch(
-        () => axiosGet()().then((res) => res.data),
-        (reason) => `${reason}` */
+    axiosGetTask<PokemonPaginatedPage>(pageUrl),
+    TE.map((pokePage) => pokePage)
   );
 };
+
+const loadPokemonPage =
+  (paginator: (page: number) => O.Option<string>) => (pageNumber: number) => {
+    return pipe(
+      paginator(pageNumber),
+      O.fold(
+        () => TE.left(`Failed to generate url for page = ${pageNumber}`),
+        (url) => fetchPokemonPage(url)
+      ),
+      TE.map((pokePage) => pokePage.results)
+    );
+  };
+
 const totalPages = 1118;
 const pokePerPage = 10;
 const limit = 20;
 
-const pokePaginator = paginator(totalPages, limit)(pokePerPage);
+const pokePaginator = makePaginator(totalPages, limit)(pokePerPage);
 const pokePaginatorPrism = prism(pokePaginator, reverseGetPageUrl);
 const pagesAround =
   (pagesAround: number, maxPages: number) => (page: number) => {
@@ -135,46 +136,55 @@ const pagesAround =
     );
   };
 
-console.log(pagesAround(5, 1118 / 20)(3));
+const paginateAndLoad = (totalCount: number, limit: number) => {
+  const paginator = makePaginator(totalCount, limit);
+
+  return (countPerPage: number) =>
+    pipe(countPerPage, paginator, loadPokemonPage);
+};
+
+const paginateAndLoader = paginateAndLoad(1118, 20);
+
+paginateAndLoader(5)(10)().then((a) => console.log(a));
 
 //--------TESTS--------
 const count = 1118;
 
 assert.deepStrictEqual(
-  paginator(count, 20)(20)(
+  makePaginator(count, 20)(20)(
     reverseGetPageUrl("https://pokeapi.co/api/v2/pokemon?offset=100&limit=20")
   ),
   O.some("https://pokeapi.co/api/v2/pokemon?offset=100&limit=20")
 );
 assert.deepStrictEqual(
-  paginator(count, 20)(20)(
+  makePaginator(count, 20)(20)(
     reverseGetPageUrl("https://pokeapi.co/api/v2/pokemon?offset=0&limit=20")
   ),
   O.some("https://pokeapi.co/api/v2/pokemon?offset=0&limit=20")
 );
-assert.ok(O.isNone(paginator(count, 20)(20)(-1)));
-assert.ok(O.isNone(paginator(count, 20)(20)(200123)));
+assert.ok(O.isNone(makePaginator(count, 20)(20)(-1)));
+assert.ok(O.isNone(makePaginator(count, 20)(20)(200123)));
 assert.deepStrictEqual(
-  paginator(count, 20)(20)(
+  makePaginator(count, 20)(20)(
     reverseGetPageUrl("https://pokeapi.co/api/v2/pokemon?offset=20&limit=20")
   ),
   O.some("https://pokeapi.co/api/v2/pokemon?offset=20&limit=20")
 );
 
 assert.deepStrictEqual(
-  paginator(count, 20)(20)(
+  makePaginator(count, 20)(20)(
     reverseGetPageUrl("https://pokeapi.co/api/v2/pokemon?offset=100&limit=20")
   ),
   O.some("https://pokeapi.co/api/v2/pokemon?offset=100&limit=20")
 );
 assert.deepStrictEqual(
-  paginator(count, 20)(20)(
+  makePaginator(count, 20)(20)(
     reverseGetPageUrl("https://pokeapi.co/api/v2/pokemon?offset=100&limit=20")
   ),
   O.some("https://pokeapi.co/api/v2/pokemon?offset=100&limit=20")
 );
 assert.deepStrictEqual(
-  paginator(count, 20)(20)(
+  makePaginator(count, 20)(20)(
     reverseGetPageUrl("https://pokeapi.co/api/v2/pokemon?offset=100&limit=20")
   ),
   O.some("https://pokeapi.co/api/v2/pokemon?offset=100&limit=20")
