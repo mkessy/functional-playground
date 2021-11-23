@@ -79,7 +79,7 @@ const makePaginator =
     const totalPageCount =
       totalCount % limit === 0
         ? Math.floor(totalCount / limit)
-        : Math.floor(totalCount / limit) + 1;
+        : Math.floor(totalCount / limit) + 1; // extra page with remainder
 
     return (page: number): O.Option<string> => {
       if (page > totalPageCount) return O.none;
@@ -147,7 +147,7 @@ const paginateAndLoad = (totalCount: number, limit: number) => {
 
 const paginateAndLoader = paginateAndLoad(1118, 20);
 
-paginateAndLoader(5)(0)().then((a) => console.log(a));
+paginateAndLoader(5)(19)().then((a) => console.log(a));
 
 //--------TESTS--------
 const count = 1118;
