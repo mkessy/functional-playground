@@ -1,7 +1,9 @@
 {
   "name": "functional-playground",
   "scripts": {
-    "start": "npx ts-node index.ts"
+    "start": "npx ts-node index.ts",
+    "dev": "npx tsc && yarn run bundle",
+    "bundle": "browserify ./dist/src/playground_7/playground_7.js -o ./dist/src/playground_7/bundle.js"
   },
   "version": "1.0.0",
   "main": "index.js",
@@ -9,10 +11,14 @@
   "dependencies": {
     "@contactlab/appy": "^4.0.2",
     "@types/axios": "^0.14.0",
+    "@types/node": "*",
     "axios": "^0.24.0",
     "fp-ts": "^2.11.5",
+    "fp-ts-contrib": "^0.1.26",
+    "graphics-ts": "^1.1.0",
     "io-ts": "^2.2.16",
     "monocle-ts": "^2.3.11",
-    "ts-node": "^10.4.0"
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.2"
   }
 }
